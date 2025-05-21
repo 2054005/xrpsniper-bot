@@ -20,9 +20,15 @@ def get_current_ratio():
     url = "https://api.coingecko.com/api/v3/simple/price?ids=ripple,stellar&vs_currencies=usd"
     response = requests.get(url)
     data = response.json()
+
+    # Защита от ошибки отсутствия данных
+    if "ripple" not in data or "stellar" not in data:
+        raise ValueError(f"Не удалось получить данные. Ответ: {data}")
+
     price_xrp = data["ripple"]["usd"]
     price_xlm = data["stellar"]["usd"]
     return round(price_xrp / price_xlm, 2), price_xrp
+
 
 def get_52_week_range():
     now = int(time.time())
