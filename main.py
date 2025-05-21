@@ -97,15 +97,13 @@ async def check_ratio(bot: TelegramBot):
         usd_to_rub = get_usd_to_rub()
         rub_price = round(xrp_price * usd_to_rub, 2) if usd_to_rub else "?"
         usd_price = round(xrp_price, 2)
-        message = (
-            f"📢 Изменение курса XLM/XRP:
-"
-            f"Было: 1 XRP = {last_ratio} XLM
-"
-            f"Стало: 1 XRP = {current_ratio} XLM
-"
-            f"💵 ≈ {usd_price} USD ≈ {rub_price} ₽\n\n"
-        )
+       message = (
+    f"📢 Изменение курса XLM/XRP:\n"
+    f"Было: 1 XRP = {last_ratio} XLM\n"
+    f"Стало: 1 XRP = {current_ratio} XLM\n"
+    f"💵 ≈ {usd_price} USD ≈ {rub_price} ₽\n\n"
+)
+
         if low and high:
             message += (
                 f"📊 52-недельный минимум: {low} XLM\n"
