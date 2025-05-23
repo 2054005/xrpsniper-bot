@@ -23,36 +23,45 @@ keyboard = ReplyKeyboardMarkup(
 
 # Курсы
 def get_current_ratio():
-    url = "https://api.coingecko.com/api/v3/simple/price?ids=ripple,stellar&vs_currencies=usd"
-    response = requests.get(url).json()
     try:
+        url = "https://api.coingecko.com/api/v3/simple/price?ids=ripple,stellar&vs_currencies=usd"
+        response = requests.get(url).json()
         price_xrp = response["ripple"]["usd"]
         price_xlm = response["stellar"]["usd"]
         return round(price_xrp / price_xlm, 2), price_xrp
-    except:
+    except Exception as e:
+        print(f"Ошибка при получении курса: {e}")
         return None, None
 
 def get_usd_to_rub():
     try:
         data = requests.get("https://api.coingecko.com/api/v3/simple/price?ids=usd&vs_currencies=rub").json()
         return data["usd"]["rub"]
-    except:
+    except Exception as e:
+        print(f"Ошибка при получении USD/RUB: {e}")
         return None
 
 def get_52_week_range():
-    now = int(time.time())
-    year_ago = now - 365 * 24 * 60 * 60
-    xlm_url = f"https://api.coingecko.com/api/v3/coins/stellar/market_chart/range?vs_currency=usd&from={year_ago}&to={now}"
-    xrp_url = f"https://api.coingecko.com/api/v3/coins/ripple/market_chart/range?vs_currency=usd&from={year_ago}&to={now}"
-
     try:
+        now = int(time.time())
+        year_ago = now - 365 * 24 * 60 * 60
+        xlm_url = f"https://api.coingecko.com/api/v3/coins/stellar/market_chart/range?vs_currency=usd&from={year_ago}&to={now}"
+        xrp_url = f"https://api.coingecko.com/api/v3/coins/ripple/market_chart/range?vs_currency=usd&from={year_ago}&to={now}"
+
         xlm_data = requests.get(xlm_url).json().get("prices", [])
         xrp_data = requests.get(xrp_url).json().get("prices", [])
+
         ratios = []
-        for x, y in zip(xlm_data, xrp_data):
-            ratios.append(round(y[1] / x[1], 2))
-        return min(ratios), max(ratios)
-    except:
+        min_len = min(len(xlm_data), len(xrp_data))
+        for i in range(min_len):
+            xlm_price = xlm_data[i][1]
+            xrp_price = xrp_data[i][1]
+            if xlm_price and xrp_price:
+                ratios.append(round(xrp_price / xlm_price, 2))
+
+        return (min(ratios), max(ratios)) if ratios else (None, None)
+    except Exception as e:
+        print(f"Ошибка диапазона: {e}")
         return None, None
 
 # Команды
@@ -71,17 +80,22 @@ def handle_message(update, context):
         if ratio and rub:
             rub_value = round(price * rub, 2)
             usd_value = round(price, 2)
-            update.message.reply_text(f"📡 1 XRP = {ratio} XLM ≈ {usd_value} USD ≈ {rub_value} ₽", reply_markup=keyboard)
+            update.message.reply_text(
+                f"📡 1 XRP = {ratio} XLM ≈ {usd_value} USD ≈ {rub_value} ₽",
+                reply_markup=keyboard
+            )
         else:
             update.message.reply_text("⚠️ Не удалось получить курс.", reply_markup=keyboard)
 
     elif text == "📊 Диапазон 52 недель":
         low, high = get_52_week_range()
         if low and high:
-            update.message.reply_text(f"📊 Диапазон 52 недель:\nМин: {low} XLM\nМакс: {high} XLM", reply_markup=keyboard)
+            update.message.reply_text(
+                f"📊 Диапазон 52 недель:\nМин: {low} XLM\nМакс: {high} XLM",
+                reply_markup=keyboard
+            )
         else:
             update.message.reply_text("⚠️ Ошибка получения диапазона", reply_markup=keyboard)
-
     else:
         update.message.reply_text("Нажмите кнопку ниже ⬇️", reply_markup=keyboard)
 
@@ -105,5 +119,6 @@ def setup():
 if __name__ == "__main__":
     setup()
     app.run(host="0.0.0.0", port=10000)
+
 
 
